@@ -1,0 +1,162 @@
+
+<title>Mustard dollar rate</title>
+    <script>
+    ;(function () {
+    let src = '//cdn.jsdelivr.net/npm/eruda';
+    src = 'http://localhost:1111/eruda/eruda.min.js';
+    //src = res_addr+'/eruda/eruda.min.js';
+    document.write('<scr' + 'ipt src=' + src + '></scr' + 'ipt>');
+    document.write('<scr' + 'ipt>eruda.init();</scr' + 'ipt>')
+    })();
+    </script>
+<script src="js/highstock.js"></script>
+<script src="js/exporting.js"></script>
+<script src="js/export-data.js"></script>
+<script src="js/theme.js"></script>
+<div id="container" style="height: 400px; min-width: 310px"></div>
+<div id="displayDollarPrice"></div>
+<style>
+    #displayDollarPrice{
+        width: 100%;
+        padding: 5px;
+        border: 2px solid green;
+    }
+    #displayDollarPrice main {
+        text-align: center;
+    }
+    #displayDollarPrice h1{
+        text-align: center; color: green;
+        font-size: 30px;
+    }
+</style>
+<script>
+//Load Data From CSV
+function getCsvData(csvFile){
+    return fetch("mustard-dollar-rate.csv")
+    .then((resp)=>{return resp.text();})
+    .then((resp)=>resp)
+    ;
+}
+//parseCsvDsta
+function parseCsvDsta(csvdata){
+    csvdata= csvdata.split("\n");
+    for(let i=1; csvdata.length>i; i++){
+        csvdata[i] = csvdata[i].split(",");
+    }
+    console.log(csvdata);
+    return csvdata;
+}
+
+
+
+
+function LoadChart(csvdata){
+    // Create the chart
+    Highcharts.stockChart('container', {
+        chart: {
+            events: {
+                load: function () {
+                    // set up the updating of the chart each second
+                    var series = this.series[0];
+                    (function () {
+                        var x = (new Date()).getTime(), // current time
+                            y = Math.round(Math.random() * 100);
+                        series.addPoint([x, y], true, true);
+                    });
+                },
+                click: function (e) {
+                    DisplayClicked(e)
+                }
+            }
+        },
+    
+        time: {
+            useUTC: false
+        },
+    
+        rangeSelector: {
+            buttons: [{
+                count: 3,
+                type: 'day',
+                text: '3Days'
+            }, {
+                count: 1,
+                type: 'week',
+                text: '1W'
+            }, {
+                type: 'all',
+                text: 'All'
+            }],
+            inputEnabled: false,
+            selected: 0
+        },
+    
+        title: {
+            text: 'Mustard Dollar Rate'
+        },
+        yAxis: {
+                title: {
+                    text: '$ to # Rate'
+                }
+        },
+        xAxis: {
+                title: {
+                    text: 'Time'
+                },
+                type: "datetime",
+                labels: {
+                    formatter: function() {
+                      return Highcharts.dateFormat('%b/%e/%Y', this.value);
+                    },
+                }
+        },
+        exporting: {
+            enabled: false
+        },
+    
+        series: [{
+            x: 'Rate',
+            data: (function () {
+                // generate an array of random data
+                
+                var data = [],
+                    time = (new Date()).getTime();
+                for(let i=0; csvdata.length-1>i; i++){
+                    
+                    data.push([
+                        csvdata[i][1],//Time
+                        Number(csvdata[i][0]),//Value
+                    ])
+                }
+                return data;
+            }())
+        }]
+    });
+    
+    
+}
+function DisplayClicked(e){ console.log(e.xAxis);
+    let date = Highcharts.dateFormat('%d-%m-%Y', 140);// e.xAxis[0].value);
+    let price = e.yAxis[0].value;
+    let showDateRate = document.querySelector("#displayDollarPrice")
+    showDateRate.innerHTML = 
+    `
+     <main>Mustard Price of Dollar on ${date} </main>
+     <h1>${price}</h1>
+    `
+}
+
+
+
+
+
+
+
+(async function (){
+    let csvdata = await getCsvData();
+    csvdata = parseCsvDsta(csvdata);
+    LoadChart(csvdata)
+})();
+
+
+</script>
